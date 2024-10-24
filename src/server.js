@@ -2,7 +2,7 @@ import { configDotenv } from "dotenv";
 import express from 'express';
 import http from "http";
 import { Server } from 'socket.io';
-import { getAll } from "./db.js";
+import { getAllTasks } from "./db/tasks/tasks.js";
 import startWebSocketServer from "./socket.js";
 
 configDotenv();
@@ -15,7 +15,7 @@ app.use(express.json());
 
 apiRouter.get('/all', async (req, res) => {
   try {
-    const tasks = await getAll();
+    const tasks = await getAllTasks();
     res.json(tasks);
   } catch (error) {
     console.error('Error fetching tasks:', error);
