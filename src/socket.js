@@ -1,3 +1,4 @@
+import { getCacheValue, setCacheValue } from './db/redis.js';
 import { createTask, getAllTasks } from './db/tasks/tasks.js';
 
 const startWebSocketServer = (io) => {
@@ -28,10 +29,27 @@ const startWebSocketServer = (io) => {
 
     socket.on('get_tasks', async (callback) => {
       try {
+        console.time()
         console.log('Fetching tasks');
-        const tasks = await getAllTasks();
+
+        const cachedResults = await getCacheValue('all_tasks')
+
+        let tasks = [];
+
+        console.log(tasks.length, cachedResults?.length)
+
+        if (cachedResults) {
+          tasks = cachedResults;
+        } else {
+          tasks = await getAllTasks();
+          await setCacheValue('all_tasks', tasks);
+        }
 
         socket.emit('tasks', tasks)
+
+        console.log(tasks.length, cachedResults?.length)
+
+        console.timeEnd();
         callback(tasks);
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -45,6 +63,7 @@ const startWebSocketServer = (io) => {
         await createTask(newTask);
 
         const tasks = await getAllTasks();
+        await setRedisItem('all_tasks', tasks);
 
         io.emit('tasks', tasks);
       } catch (error) {
