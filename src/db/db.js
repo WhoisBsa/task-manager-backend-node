@@ -14,25 +14,23 @@ async function connect() {
     port: process.env.POSTGRES_PORT,
   });
 
-  //apenas testando a conexão
-  const client = await pool.connect();
-  console.log("Criou pool de conexões no PostgreSQL!");
-
-  const res = await client.query('SELECT NOW()');
-  console.log(res.rows[0]);
-  client.release();
-
-  //guardando para usar sempre o mesmo
   global.connection = pool;
   return pool.connect();
 }
 
-const getAll = async () => {
+const executeQuery = async (query, params = []) => {
   const connection = await connect();
 
-  const res = await connection.query('SELECT * FROM logins');
-  console.log(res);
-  return res.rows;
+  try {
+    const result = await connection.query(query, params);
+    return result;
+  } catch (error) {
+    console.error('Error when executing query: ', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
-export { getAll };
+export { executeQuery };
+
