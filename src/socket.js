@@ -1,10 +1,11 @@
-import { getCacheValue, setCacheValue } from './db/redis.js';
+import { getCacheValue, initializeRedisClient, setCacheValue } from './db/redis.js';
 import { createTask, getAllTasks } from './db/tasks/tasks.js';
 
 const startWebSocketServer = (io) => {
   io.on('connection', (socket) => {
     console.log('WebSocket connection established');
     socket.send('Connection established successfully.');
+    initializeRedisClient();
 
     let previousId;
     const safeJoin = currentId => {
@@ -36,8 +37,6 @@ const startWebSocketServer = (io) => {
 
         let tasks = [];
 
-        console.log(tasks.length, cachedResults?.length)
-
         if (cachedResults) {
           tasks = cachedResults;
         } else {
@@ -45,9 +44,7 @@ const startWebSocketServer = (io) => {
           await setCacheValue('all_tasks', tasks);
         }
 
-        socket.emit('tasks', tasks)
-
-        console.log(tasks.length, cachedResults?.length)
+        socket.emit('tasks', tasks);
 
         console.timeEnd();
         callback(tasks);
@@ -63,7 +60,7 @@ const startWebSocketServer = (io) => {
         await createTask(newTask);
 
         const tasks = await getAllTasks();
-        await setRedisItem('all_tasks', tasks);
+        await setCacheValue('all_tasks', tasks);
 
         io.emit('tasks', tasks);
       } catch (error) {

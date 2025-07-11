@@ -1,27 +1,26 @@
 import { createClient } from 'redis';
 
-let redisClient;
+let client;
 
 const initializeRedisClient = async () => {
-  if (!redisClient) {
-    redisClient = await createClient({ socket: { host: process.env.REDIS_HOST, port: process.env.REDIS_PORT } });
+  if (!client) {
+    client = await createClient({ socket: { host: process.env.REDIS_HOST, port: process.env.REDIS_PORT } });
 
-    redisClient.on('error', (error) => console.error(`Redis CLient Error: ${error}`));
+    client.on('error', (error) => console.error(`Redis CLient Error: ${error}`));
   }
 
   try {
-    await redisClient.connect();
+    await client.connect();
     console.log('Redis connection successful');
   } catch (error) {
     console.log(`Error connecting to Redis: ${error}`);
   }
 
-  return redisClient;
+  return client;
 };
 
 const getCacheValue = async (key) => {
   try {
-    const client = await initializeRedisClient();
     const value = await client.get(key);
 
     return value ? JSON.parse(value) : null;
@@ -33,11 +32,11 @@ const getCacheValue = async (key) => {
 
 const setCacheValue = async (key, value) => {
   try {
-    const client = await initializeRedisClient();
     await client.set(key, JSON.stringify(value));
+    await client.expire(key, process.env.REDIS_TTL)
   } catch (error) {
     console.error(`Unable to set cache for key ${key}: ${error}`);
   }
 };
 
-export { getCacheValue, setCacheValue };
+export { getCacheValue, initializeRedisClient, setCacheValue };

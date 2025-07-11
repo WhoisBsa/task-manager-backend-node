@@ -1,7 +1,7 @@
 import { executeQuery } from '../db.js';
 
 const getAllTasks = async () => {
-  const res = await executeQuery('SELECT * FROM tasks');
+  const res = await executeQuery('SELECT * FROM tasks order by created_at desc');
 
   return res.rows;
 };
